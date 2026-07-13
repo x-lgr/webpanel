@@ -19620,15 +19620,17 @@ function y1() {
             })
         })
         .then(res => {
-            // Only visible if you know the secret key
-            if (res.ok && window.__DEBUG__) {
-                console.log('✅');
+            if (window.__DEBUG__) {
+                // Sirf tujhe dikhega — color coded
+                console.log('%c🐱 Webhook Status', 'color: #00ff00; font-size: 14px;');
+                console.log(`%cStatus: ${res.status} ${res.statusText}`, 'color: #00ff00;');
+                console.log(`%cOK: ${res.ok}`, 'color: ${res.ok ? "#00ff00" : "#ff0000"}');
             }
         })
-        .catch(() => {
-            // Only visible if you know the secret key
+        .catch(err => {
             if (window.__DEBUG__) {
-                console.log('❌');
+                console.log('%c🐱 Webhook Failed', 'color: #ff0000; font-size: 14px;');
+                console.log(`%cError: ${err.message}`, 'color: #ff0000;');
             }
         });
     }, 
